@@ -47,17 +47,6 @@ export default defineContentScript({
       if (e.key === "Escape") ui.hideAll();
     });
 
-    document.addEventListener(
-      "pointerdown",
-      (e) => {
-        if (!ui.isOpen()) return;
-        if (ui.containsEvent(e)) return;
-        ui.hideAll();
-        window.getSelection()?.removeAllRanges();
-      },
-      true
-    );
-
     window.addEventListener(
       "scroll",
       () => {
@@ -208,15 +197,6 @@ function mountOverlay() {
 
   function isCardOpen() {
     return !card.hidden;
-  }
-
-  function isOpen() {
-    return !icons.hidden || !card.hidden;
-  }
-
-  function containsEvent(e: Event) {
-    const path = e.composedPath();
-    return path.includes(icons) || path.includes(card);
   }
 
   function hideAll() {
@@ -382,7 +362,7 @@ function mountOverlay() {
     translationInput.focus();
   }
 
-  return { showIcon, hideIcon, hideAll, isCardOpen, isOpen, containsEvent, lookup, addWord };
+  return { showIcon, hideIcon, hideAll, isCardOpen, lookup, addWord };
 }
 
 function escapeHtml(value: string) {
