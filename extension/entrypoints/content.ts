@@ -6,9 +6,15 @@ import { sendMessage, type PageMessage } from "../lib/messages";
 
 export default defineContentScript({
   matches: ["http://*/*", "https://*/*"],
+  excludeMatches: [
+    "*://translate.google.com/*",
+    "*://translate.google.com.vn/*",
+    "*://translate.google.co.uk/*",
+  ],
   cssInjectionMode: "manual",
   main() {
     if (location.origin === getAppUrl()) return;
+    if (location.hostname.startsWith("translate.google.")) return;
     const ui = mountOverlay();
     let syncTimer = 0;
 
