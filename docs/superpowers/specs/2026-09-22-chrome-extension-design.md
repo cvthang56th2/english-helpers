@@ -9,7 +9,7 @@ Chromium (Manifest V3) extension that looks up EN⇔VI on any page, saves to the
 
 ## Product
 
-- **Selection:** floating icon next to highlighted text; click looks up. Also right-click → “Tra Word Ledger”.
+- **Selection:** floating lookup + add icons next to highlighted text. Right-click → Word Ledger icon → “Tra từ” or “Thêm từ mới”.
 - **Toolbar popup:** lookup, save, manual add, login CTA, open side panel / open web app.
 - **Side panel:** notebook grouped by day + search + manual add.
 - **Web app:** same “Thêm thủ công” form (term, translation, IPA, direction; optional POS/definition).

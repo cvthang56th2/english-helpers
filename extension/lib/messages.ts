@@ -30,6 +30,13 @@ export type PageLookupMessage = {
   q: string;
 };
 
+export type PageAddMessage = {
+  type: "ADD_IN_PAGE";
+  q: string;
+};
+
+export type PageMessage = PageLookupMessage | PageAddMessage;
+
 export function sendMessage<T extends ExtensionResponse>(
   message: ExtensionRequest
 ): Promise<T> {

@@ -17,10 +17,17 @@ export default defineBackground(() => {
   });
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
-    if (info.menuItemId !== "word-ledger-lookup" || !tab?.id) return;
+    if (!tab?.id) return;
     const q = selectionToQuery(String(info.selectionText ?? ""));
     if (!q) return;
-    void browser.tabs.sendMessage(tab.id, { type: "LOOKUP_IN_PAGE", q });
+    const type =
+      info.menuItemId === "word-ledger-lookup"
+        ? "LOOKUP_IN_PAGE"
+        : info.menuItemId === "word-ledger-add"
+          ? "ADD_IN_PAGE"
+          : null;
+    if (!type) return;
+    void browser.tabs.sendMessage(tab.id, { type, q }).catch(() => {});
   });
 
   browser.runtime.onMessage.addListener(
@@ -41,8 +48,20 @@ export default defineBackground(() => {
 async function ensureContextMenu() {
   await browser.contextMenus.removeAll();
   browser.contextMenus.create({
+    id: "word-ledger",
+    title: "Word Ledger",
+    contexts: ["selection"],
+  });
+  browser.contextMenus.create({
     id: "word-ledger-lookup",
-    title: "Tra Word Ledger",
+    parentId: "word-ledger",
+    title: "Tra từ",
+    contexts: ["selection"],
+  });
+  browser.contextMenus.create({
+    id: "word-ledger-add",
+    parentId: "word-ledger",
+    title: "Thêm từ mới",
     contexts: ["selection"],
   });
 }
