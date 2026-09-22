@@ -230,15 +230,22 @@ export function tokenizeForIpa(text: string): string[] {
   return out;
 }
 
+export function canSplitEnglishPhrase(
+  english: string,
+  ipa: string | null | undefined
+): boolean {
+  if (ipa?.trim()) return false;
+  return tokenizeForIpa(english).length >= 2;
+}
+
 export function canSplitForIpa(
   term: string,
   ipa: string | null | undefined,
   direction: Direction
 ): boolean {
-  if (ipa?.trim()) return false;
   const englishSide = direction === "en-vi" ? term : null;
   if (!englishSide) return false;
-  return tokenizeForIpa(englishSide).length >= 2;
+  return canSplitEnglishPhrase(englishSide, ipa);
 }
 
 export function joinWordIpas(
