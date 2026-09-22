@@ -22,6 +22,8 @@ type RawEntry = {
   meanings?: RawMeaning[];
 };
 
+const DICT_UA = "WordLedger/1.0 (personal vocab notebook)";
+
 export function normalizeAudioUrl(url: string | undefined | null): string | null {
   if (!url || !url.trim()) return null;
   const trimmed = url.trim();
@@ -30,6 +32,64 @@ export function normalizeAudioUrl(url: string | undefined | null): string | null
     return trimmed;
   }
   return `https://${trimmed}`;
+}
+
+/** Google Translate TTS — works for any English word when dictionary audio is missing. */
+export function googleTtsUrl(word: string, locale: "en-US" | "en-GB" = "en-US"): string {
+  const tl = locale === "en-GB" ? "en-GB" : "en";
+  const params = new URLSearchParams({
+    ie: "UTF-8",
+    client: "tw-ob",
+    tl,
+    q: word.trim(),
+  });
+  return `https://translate.google.com/translate_tts?${params.toString()}`;
+}
+
+/**
+ * Candidate lemma forms for dictionary lookup.
+ * e.g. mopping → mopping, moppe, mop; running → running, runne, run
+ */
+export function dictionaryCandidates(word: string): string[] {
+  const q = word.trim().toLowerCase();
+  if (!q) return [];
+  const out: string[] = [q];
+  const add = (w: string) => {
+    if (w && w.length >= 2 && !out.includes(w)) out.push(w);
+  };
+
+  if (q.endsWith("ies") && q.length > 4) {
+    add(q.slice(0, -3) + "y");
+  }
+  if (q.endsWith("ves") && q.length > 4) {
+    add(q.slice(0, -3) + "f");
+    add(q.slice(0, -3) + "fe");
+  }
+  if (q.endsWith("ing") && q.length > 5) {
+    const stem = q.slice(0, -3);
+    add(stem);
+    add(stem + "e");
+    // mopping → mop (double consonant)
+    if (stem.length >= 2 && stem.at(-1) === stem.at(-2)) {
+      add(stem.slice(0, -1));
+    }
+  }
+  if (q.endsWith("ed") && q.length > 4) {
+    const stem = q.slice(0, -2);
+    add(stem);
+    add(stem + "e");
+    if (stem.length >= 2 && stem.at(-1) === stem.at(-2)) {
+      add(stem.slice(0, -1));
+    }
+  }
+  if (q.endsWith("es") && q.length > 4) {
+    add(q.slice(0, -2));
+    add(q.slice(0, -1));
+  } else if (q.endsWith("s") && !q.endsWith("ss") && q.length > 3) {
+    add(q.slice(0, -1));
+  }
+
+  return out;
 }
 
 function pickIpa(entry: RawEntry): string | null {
@@ -99,24 +159,27 @@ export function parseDictionaryEntries(
   }
 
   const { audioUsUrl, audioUkUrl } = pickAudios(entry);
+  const lemma = entry.word?.trim() || fallbackWord;
 
   return {
-    word: entry.word?.trim() || fallbackWord,
+    word: lemma,
     ipa: pickIpa(entry),
-    audioUsUrl,
-    audioUkUrl,
+    audioUsUrl: audioUsUrl ?? googleTtsUrl(lemma, "en-US"),
+    audioUkUrl: audioUkUrl ?? googleTtsUrl(lemma, "en-GB"),
     meanings,
   };
 }
 
-export async function fetchDictionary(
-  word: string
+async function fetchDictionaryOnce(
+  word: string,
+  signal?: AbortSignal
 ): Promise<DictionaryResult | null> {
-  const q = word.trim().toLowerCase();
-  if (!q) return null;
-
   const res = await fetch(
-    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(q)}`
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+    {
+      headers: { Accept: "application/json", "User-Agent": DICT_UA },
+      signal,
+    }
   );
 
   if (res.status === 404) return null;
@@ -125,5 +188,35 @@ export async function fetchDictionary(
   }
 
   const data = await res.json();
-  return parseDictionaryEntries(data, q);
+  return parseDictionaryEntries(data, word);
+}
+
+export async function fetchDictionary(
+  word: string
+): Promise<DictionaryResult | null> {
+  const candidates = dictionaryCandidates(word);
+  if (candidates.length === 0) return null;
+
+  for (const candidate of candidates) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const result = await fetchDictionaryOnce(candidate, controller.signal);
+      if (result) return result;
+    } catch {
+      // try next candidate / fall through
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Last resort: TTS-only so "đọc từ" still works
+  const q = word.trim().toLowerCase();
+  return {
+    word: q,
+    ipa: null,
+    audioUsUrl: googleTtsUrl(q, "en-US"),
+    audioUkUrl: googleTtsUrl(q, "en-GB"),
+    meanings: [],
+  };
 }

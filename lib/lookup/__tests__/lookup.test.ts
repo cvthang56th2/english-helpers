@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { detectLang, inferDirection } from "@/lib/lookup/detect-lang";
 import {
+  dictionaryCandidates,
   normalizeAudioUrl,
   parseDictionaryEntries,
 } from "@/lib/lookup/dictionary";
@@ -19,6 +20,14 @@ describe("detectLang", () => {
   it("infers direction", () => {
     expect(inferDirection("beautiful")).toBe("en-vi");
     expect(inferDirection("đẹp")).toBe("vi-en");
+  });
+});
+
+describe("dictionaryCandidates", () => {
+  it("stems -ing forms like mopping → mop", () => {
+    const c = dictionaryCandidates("mopping");
+    expect(c[0]).toBe("mopping");
+    expect(c).toContain("mop");
   });
 });
 

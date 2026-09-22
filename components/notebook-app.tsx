@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LogOut, Search } from "lucide-react";
+import { BookOpen, Clock, LogOut, Search } from "lucide-react";
 import { toast } from "sonner";
 import { DayGroup } from "@/components/day-group";
-import { LookupBar } from "@/components/lookup-bar";
-import { LookupResultCard } from "@/components/lookup-result";
+import { LookupHistoryList } from "@/components/lookup-history-list";
+import {
+  TranslatePanel,
+  type TranslateSeed,
+} from "@/components/translate-panel";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/client";
@@ -14,11 +18,34 @@ import {
   langsFromDirection,
   translateClient,
 } from "@/lib/lookup";
+import {
+  clearLookupHistory,
+  pushLookupHistory,
+  readLookupHistory,
+  removeLookupHistory,
+  type LookupHistoryEntry,
+} from "@/lib/lookup/history";
 import type { Direction, LookupResult, WordRecord } from "@/lib/lookup/types";
 
 type Props = {
   email: string | undefined;
 };
+
+type MainTab = "notebook" | "history";
+
+function NotebookSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true" aria-label="Đang tải sổ">
+      {[0, 1].map((i) => (
+        <div key={i} className="surface space-y-3 p-4">
+          <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function NotebookApp({ email }: Props) {
   const [result, setResult] = useState<LookupResult | null>(null);
@@ -28,6 +55,33 @@ export function NotebookApp({ email }: Props) {
   const [words, setWords] = useState<WordRecord[]>([]);
   const [query, setQuery] = useState("");
   const [loadingWords, setLoadingWords] = useState(true);
+  const [mainTab, setMainTab] = useState<MainTab>("notebook");
+  const [history, setHistory] = useState<LookupHistoryEntry[]>([]);
+  const [translateSeed, setTranslateSeed] = useState<TranslateSeed | null>(
+    null
+  );
+
+  useEffect(() => {
+    setHistory(readLookupHistory());
+  }, []);
+
+  function rememberResult(next: LookupResult) {
+    setResult(next);
+    setHistory((prev) => pushLookupHistory(next, prev));
+  }
+
+  function restoreFromHistory(entry: LookupHistoryEntry) {
+    setLooking(false);
+    setSaved(false);
+    setResult(entry.result);
+    setTranslateSeed({
+      term: entry.result.term,
+      direction: entry.result.direction,
+      at: Date.now(),
+    });
+    setHistory((prev) => pushLookupHistory(entry.result, prev));
+    setMainTab("notebook");
+  }
 
   const loadWords = useCallback(async (q = "") => {
     setLoadingWords(true);
@@ -59,8 +113,44 @@ export function NotebookApp({ email }: Props) {
 
     const { sourceLang, targetLang } = langsFromDirection(direction);
 
+    async function enrichWithDictionary(
+      base: LookupResult
+    ): Promise<LookupResult> {
+      if (base.ipa && base.audioUsUrl && base.meanings.length > 0) {
+        return base;
+      }
+      const english =
+        base.sourceLang === "en"
+          ? base.term
+          : base.targetLang === "en"
+            ? base.translation
+            : null;
+      if (!english) {
+        return {
+          ...base,
+          audioUsUrl: base.audioUsUrl,
+          audioUkUrl: base.audioUkUrl,
+        };
+      }
+      try {
+        const dict = await fetchDictionary(english);
+        if (!dict) return base;
+        const primary = dict.meanings[0];
+        return {
+          ...base,
+          ipa: base.ipa || dict.ipa,
+          audioUsUrl: base.audioUsUrl || dict.audioUsUrl,
+          audioUkUrl: base.audioUkUrl || dict.audioUkUrl,
+          partOfSpeech: base.partOfSpeech || primary?.partOfSpeech || null,
+          definition: base.definition || primary?.definition || null,
+          meanings: base.meanings.length > 0 ? base.meanings : dict.meanings,
+        };
+      } catch {
+        return base;
+      }
+    }
+
     try {
-      // 1) Try server
       const res = await fetch("/api/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,11 +159,13 @@ export function NotebookApp({ email }: Props) {
 
       if (res.ok) {
         const data = (await res.json()) as LookupResult;
-        setResult(data);
+        // Server may return translation without IPA if dictionary timed out —
+        // enrich from the browser.
+        const enriched = await enrichWithDictionary(data);
+        rememberResult(enriched);
         return;
       }
 
-      // 2+3) Client Google → MyMemory + dictionary
       toast.message("Server không dịch được — thử từ trình duyệt…");
 
       const englishWord = sourceLang === "en" ? q : null;
@@ -90,7 +182,7 @@ export function NotebookApp({ email }: Props) {
       }
 
       const primary = dict?.meanings[0];
-      setResult({
+      rememberResult({
         term: q,
         sourceLang,
         targetLang,
@@ -157,71 +249,152 @@ export function NotebookApp({ email }: Props) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 py-8 sm:py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--ink-accent)]">
-            Word Ledger
-          </p>
-          <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--ink)] sm:text-4xl">
-            Sổ từ vựng
-          </h1>
-          {email && (
-            <p className="mt-1 text-sm text-muted-foreground">{email}</p>
-          )}
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-16 pt-6 sm:gap-8 sm:pt-10">
+      <header className="sticky top-0 z-20 -mx-4 border-b border-border/80 bg-background/85 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <BookOpen className="size-5" aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                Word Ledger
+              </p>
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                Sổ từ vựng
+              </h1>
+              {email && (
+                <p className="truncate text-xs text-muted-foreground">{email}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10 cursor-pointer gap-1.5 px-3"
+              onClick={signOut}
+            >
+              <LogOut className="size-3.5" />
+              Thoát
+            </Button>
+          </div>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="cursor-pointer gap-1.5"
-          onClick={signOut}
-        >
-          <LogOut className="size-3.5" />
-          Thoát
-        </Button>
       </header>
 
-      <section className="space-y-4">
-        <LookupBar onLookup={lookup} loading={looking} />
-        {result && (
-          <LookupResultCard
-            result={result}
-            onSave={save}
-            saving={saving}
-            saved={saved}
-          />
-        )}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Tra từ</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Gõ một từ hoặc cụm ngắn — Enter hoặc Tra để dịch. Hướng tự nhận nếu
+            chưa đổi tay.
+          </p>
+        </div>
+        <TranslatePanel
+          onLookup={lookup}
+          onSelectHistory={restoreFromHistory}
+          history={history}
+          loading={looking}
+          result={result}
+          onSave={save}
+          saving={saving}
+          saved={saved}
+          seed={translateSeed}
+        />
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-medium text-[var(--ink)]">
+        <div
+          role="tablist"
+          aria-label="Sổ và lịch sử"
+          className="flex gap-1 rounded-xl border border-border/80 bg-muted/40 p-1"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mainTab === "notebook"}
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              mainTab === "notebook"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => setMainTab("notebook")}
+          >
+            <BookOpen className="size-3.5" aria-hidden />
             Sổ của bạn
-          </h2>
-          <div className="relative w-full max-w-[220px]">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => onSearchNotebook(e.target.value)}
-              placeholder="Tìm trong sổ…"
-              className="h-9 pl-8 text-sm"
-            />
-          </div>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mainTab === "history"}
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              mainTab === "history"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => setMainTab("history")}
+          >
+            <Clock className="size-3.5" aria-hidden />
+            Lịch sử
+            {history.length > 0 && (
+              <span className="tabular-nums text-xs opacity-70">
+                {history.length}
+              </span>
+            )}
+          </button>
         </div>
-        {loadingWords ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Đang tải…
-          </p>
+
+        {mainTab === "notebook" ? (
+          <>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Sổ của bạn
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {loadingWords
+                    ? "Đang tải…"
+                    : words.length > 0
+                      ? `${words.length} từ`
+                      : "Chưa có từ nào"}
+                </p>
+              </div>
+              <div className="relative w-full sm:max-w-[240px]">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => onSearchNotebook(e.target.value)}
+                  placeholder="Tìm trong sổ…"
+                  aria-label="Tìm trong sổ"
+                  className="h-10 pl-9 text-sm"
+                />
+              </div>
+            </div>
+            {loadingWords ? (
+              <NotebookSkeleton />
+            ) : (
+              <DayGroup
+                words={words}
+                onUpdated={(w) =>
+                  setWords((prev) => prev.map((x) => (x.id === w.id ? w : x)))
+                }
+                onDeleted={(id) =>
+                  setWords((prev) => prev.filter((x) => x.id !== id))
+                }
+              />
+            )}
+          </>
         ) : (
-          <DayGroup
-            words={words}
-            onUpdated={(w) =>
-              setWords((prev) => prev.map((x) => (x.id === w.id ? w : x)))
-            }
-            onDeleted={(id) =>
-              setWords((prev) => prev.filter((x) => x.id !== id))
-            }
+          <LookupHistoryList
+            entries={history}
+            onSelect={restoreFromHistory}
+            onRemove={(id) => setHistory(removeLookupHistory(id, history))}
+            onClear={() => {
+              setHistory(clearLookupHistory());
+              toast.message("Đã xóa lịch sử tra từ trên máy này");
+            }}
           />
         )}
       </section>

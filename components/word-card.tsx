@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { WordRecord } from "@/lib/lookup/types";
 
 type Props = {
@@ -69,19 +70,19 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
 
   return (
     <>
-      <li className="group flex items-start justify-between gap-3 border-b border-[var(--paper-border)] py-3 last:border-0">
+      <li className="group flex items-start justify-between gap-3 px-3 py-3.5 transition-colors hover:bg-muted/40">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--ink)]">
+            <span className="text-lg font-semibold tracking-tight text-foreground">
               {word.term}
             </span>
             {word.ipa && (
-              <span className="font-[family-name:var(--font-ipa)] text-sm text-[var(--ink-accent)]">
+              <span className="font-[family-name:var(--font-ipa)] text-sm text-primary">
                 /{word.ipa.replace(/^\/|\/$/g, "")}/
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-[var(--ink)]/90">{word.translation}</p>
+          <p className="mt-0.5 text-foreground/90">{word.translation}</p>
           {word.definition && (
             <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
               {word.part_of_speech && (
@@ -90,22 +91,32 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
               {word.definition}
             </p>
           )}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <AudioButton url={word.audio_us_url} label="US" />
-            <AudioButton url={word.audio_uk_url} label="UK" />
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <AudioButton
+              url={word.audio_us_url}
+              text={word.source_lang === "en" ? word.term : word.translation}
+              label="US"
+              lang="en-US"
+            />
+            <AudioButton
+              url={word.audio_uk_url}
+              text={word.source_lang === "en" ? word.term : word.translation}
+              label="UK"
+              lang="en-GB"
+            />
           </div>
         </div>
-        <div className="flex shrink-0 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <div className="flex shrink-0 gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="cursor-pointer"
+            className="size-9 cursor-pointer"
             onClick={() => {
               setTranslation(word.translation);
               setEditOpen(true);
             }}
-            aria-label="Sửa"
+            aria-label={`Sửa ${word.term}`}
           >
             <Pencil className="size-3.5" />
           </Button>
@@ -113,10 +124,10 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="cursor-pointer text-destructive"
+            className="size-9 cursor-pointer text-destructive hover:text-destructive"
             onClick={remove}
             disabled={busy}
-            aria-label="Xóa"
+            aria-label={`Xóa ${word.term}`}
           >
             <Trash2 className="size-3.5" />
           </Button>
@@ -128,11 +139,16 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
           <DialogHeader>
             <DialogTitle>Sửa bản dịch — {word.term}</DialogTitle>
           </DialogHeader>
-          <Input
-            value={translation}
-            onChange={(e) => setTranslation(e.target.value)}
-            autoFocus
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor={`edit-${word.id}`}>Bản dịch</Label>
+            <Input
+              id={`edit-${word.id}`}
+              value={translation}
+              onChange={(e) => setTranslation(e.target.value)}
+              autoFocus
+              className="h-10"
+            />
+          </div>
           <DialogFooter>
             <Button
               type="button"
@@ -144,11 +160,11 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
             </Button>
             <Button
               type="button"
-              className="cursor-pointer bg-[var(--ink-accent)] text-white hover:bg-[var(--ink-accent)]/90"
+              className="cursor-pointer"
               onClick={saveEdit}
               disabled={busy}
             >
-              Lưu
+              {busy ? "Đang lưu…" : "Lưu"}
             </Button>
           </DialogFooter>
         </DialogContent>

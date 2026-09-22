@@ -4,29 +4,59 @@ import { BookmarkPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AudioButton } from "@/components/audio-button";
 import type { LookupResult } from "@/lib/lookup/types";
+import { cn } from "@/lib/utils";
 
 type Props = {
   result: LookupResult;
   onSave: () => void;
   saving?: boolean;
   saved?: boolean;
+  variant?: "card" | "pane";
 };
 
-export function LookupResultCard({ result, onSave, saving, saved }: Props) {
+/** Prefer English lemma for pronunciation */
+function speakText(result: LookupResult) {
+  if (result.sourceLang === "en") return result.term;
+  if (result.targetLang === "en") return result.translation;
+  return result.term;
+}
+
+export function LookupResultCard({
+  result,
+  onSave,
+  saving,
+  saved,
+  variant = "card",
+}: Props) {
+  const speak = speakText(result);
+  const isPane = variant === "pane";
+
   return (
-    <article className="rounded-xl border border-[var(--paper-border)] bg-[var(--paper-card)] p-5 shadow-sm">
+    <article
+      className={cn(
+        isPane
+          ? "flex h-full flex-col p-4 sm:p-5"
+          : "rounded-xl border border-border bg-card p-5 shadow-sm"
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[var(--ink)]">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {result.term}
           </h2>
-          {result.ipa && (
-            <p className="mt-1 font-[family-name:var(--font-ipa)] text-lg text-[var(--ink-accent)]">
+          {result.ipa ? (
+            <p className="mt-1 font-[family-name:var(--font-ipa)] text-lg text-primary">
               /{result.ipa.replace(/^\/|\/$/g, "")}/
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Chưa có IPA từ từ điển — vẫn nghe được bên dưới
             </p>
           )}
           <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-            {result.direction === "en-vi" ? "English → Tiếng Việt" : "Tiếng Việt → English"}
+            {result.direction === "en-vi"
+              ? "English → Tiếng Việt"
+              : "Tiếng Việt → English"}
             {result.translateProvider !== "server" && (
               <span className="ml-2 normal-case tracking-normal opacity-70">
                 · {result.translateProvider}
@@ -38,7 +68,7 @@ export function LookupResultCard({ result, onSave, saving, saved }: Props) {
           type="button"
           onClick={onSave}
           disabled={saving || saved}
-          className="cursor-pointer gap-1.5 bg-[var(--ink-accent)] text-white hover:bg-[var(--ink-accent)]/90 disabled:opacity-70"
+          className="cursor-pointer gap-1.5"
         >
           {saved ? (
             <>
@@ -52,21 +82,40 @@ export function LookupResultCard({ result, onSave, saving, saved }: Props) {
         </Button>
       </div>
 
-      <p className="mt-4 text-xl leading-snug text-[var(--ink)]">{result.translation}</p>
+      <p className="mt-4 text-xl leading-snug text-foreground">
+        {result.translation}
+      </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <AudioButton url={result.audioUsUrl} label="US" />
-        <AudioButton url={result.audioUkUrl} label="UK" />
+        <AudioButton
+          url={result.audioUsUrl}
+          text={speak}
+          label="US"
+          lang="en-US"
+        />
+        <AudioButton
+          url={result.audioUkUrl}
+          text={speak}
+          label="UK"
+          lang="en-GB"
+        />
       </div>
 
       {result.meanings.length > 0 && (
-        <ul className="mt-4 space-y-2 border-t border-[var(--paper-border)] pt-4">
+        <ul className="mt-4 space-y-2 border-t border-border pt-4">
           {result.meanings.slice(0, 2).map((m, i) => (
-            <li key={`${m.partOfSpeech}-${i}`} className="text-sm leading-relaxed">
-              <span className="mr-2 italic text-muted-foreground">{m.partOfSpeech}</span>
-              <span className="text-[var(--ink)]/85">{m.definition}</span>
+            <li
+              key={`${m.partOfSpeech}-${i}`}
+              className="text-sm leading-relaxed"
+            >
+              <span className="mr-2 italic text-muted-foreground">
+                {m.partOfSpeech}
+              </span>
+              <span className="text-foreground/85">{m.definition}</span>
               {m.example && (
-                <span className="mt-0.5 block text-muted-foreground">“{m.example}”</span>
+                <span className="mt-0.5 block text-muted-foreground">
+                  “{m.example}”
+                </span>
               )}
             </li>
           ))}

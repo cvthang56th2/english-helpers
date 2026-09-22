@@ -1,5 +1,6 @@
 "use client";
 
+import { BookMarked } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
 import { WordCard } from "@/components/word-card";
 import type { WordRecord } from "@/lib/lookup/types";
@@ -23,9 +24,17 @@ function dayLabel(iso: string) {
 export function DayGroup({ words, onUpdated, onDeleted }: Props) {
   if (words.length === 0) {
     return (
-      <p className="py-12 text-center text-muted-foreground">
-        Gõ một từ để tra và lưu vào sổ.
-      </p>
+      <div className="surface flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <BookMarked className="size-5" aria-hidden />
+        </div>
+        <div className="space-y-1">
+          <p className="font-medium text-foreground">Sổ còn trống</p>
+          <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
+            Tra một từ ở phía trên rồi bấm Lưu để bắt đầu sổ từ vựng.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -38,13 +47,16 @@ export function DayGroup({ words, onUpdated, onDeleted }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {[...groups.entries()].map(([key, list]) => (
         <section key={key}>
-          <h3 className="mb-2 font-[family-name:var(--font-display)] text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {dayLabel(list[0].created_at)}
+            <span className="ml-2 font-normal normal-case tracking-normal">
+              · {list.length} từ
+            </span>
           </h3>
-          <ul className="rounded-xl border border-[var(--paper-border)] bg-[var(--paper-card)] px-4">
+          <ul className="surface divide-y divide-border px-1 sm:px-2">
             {list.map((w) => (
               <WordCard
                 key={w.id}

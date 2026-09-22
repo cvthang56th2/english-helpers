@@ -1,16 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Source_Sans_3, Noto_Serif } from "next/font/google";
+import { Be_Vietnam_Pro, Noto_Serif } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const display = Fraunces({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const sans = Source_Sans_3({
+const sans = Be_Vietnam_Pro({
   subsets: ["latin", "latin-ext", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -34,11 +30,19 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${display.variable} ${sans.variable} ${ipa.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${sans.variable} ${ipa.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--paper)] text-[var(--ink)]">
-        {children}
-        <Toaster richColors position="top-center" />
+      <body className="flex min-h-full flex-col bg-background text-foreground">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster richColors position="top-center" />
+        </ThemeProvider>
       </body>
     </html>
   );
