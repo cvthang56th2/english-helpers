@@ -38,7 +38,7 @@ App mặc định `localhost:3000`. Dev hiện tại có thể dùng `pnpm dev -
 
 ## Chrome extension
 
-Companion MV3: bôi từ trên mọi trang (icon + chuột phải), popup tra/lưu, side panel sổ, form thêm từ + IPA (cùng form trên web). Trên Google Dịch: nút **Lưu vào sổ** cạnh kết quả → card xác nhận (có tách từ lấy IPA cho câu dài). Cần đang login Word Ledger trên cùng origin.
+Companion MV3: bôi từ trên mọi trang (icon + chuột phải), popup tra/lưu, side panel sổ, form thêm từ + IPA (cùng form trên web). Trên Google Dịch: nút **Lưu vào sổ** cạnh kết quả → card xác nhận (có tách từ lấy IPA cho câu dài). Trên Google Search (query kiểu “X tiếng anh là gì”): nút **Lưu vào sổ** gần AI Overview + vẫn bôi chọn bình thường. Cần đang login Word Ledger trên cùng origin.
 
 ```bash
 pnpm --dir extension install
