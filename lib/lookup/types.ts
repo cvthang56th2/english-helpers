@@ -17,7 +17,7 @@ export type DictionaryResult = {
 
 export type TranslateResult = {
   text: string;
-  provider: "google" | "mymemory";
+  provider: "google";
 };
 
 export type LookupResult = {
@@ -26,7 +26,7 @@ export type LookupResult = {
   targetLang: Lang;
   direction: Direction;
   translation: string;
-  translateProvider: "google" | "mymemory" | "server";
+  translateProvider: "google" | "server";
   ipa: string | null;
   audioUsUrl: string | null;
   audioUkUrl: string | null;

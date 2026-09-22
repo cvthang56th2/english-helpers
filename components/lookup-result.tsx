@@ -50,7 +50,7 @@ export function LookupResultCard({
             </p>
           ) : (
             <p className="mt-1 text-sm text-muted-foreground">
-              Chưa có IPA từ từ điển — vẫn nghe được bên dưới
+              Chưa có phiên âm — vẫn nghe được bên dưới
             </p>
           )}
           <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">

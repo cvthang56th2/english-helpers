@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { detectLang, inferDirection } from "@/lib/lookup/detect-lang";
+import { buildDictionaryResult, googleTtsUrl } from "@/lib/lookup/dictionary";
 import {
-  dictionaryCandidates,
-  normalizeAudioUrl,
-  parseDictionaryEntries,
-} from "@/lib/lookup/dictionary";
+  parseGoogleTranslateResponse,
+  pickMeanings,
+  pickPronunciation,
+  pickTranslation,
+} from "@/lib/lookup/google";
 
 describe("detectLang", () => {
   it("detects Vietnamese by diacritics", () => {
@@ -23,77 +25,104 @@ describe("detectLang", () => {
   });
 });
 
-describe("dictionaryCandidates", () => {
-  it("stems -ing forms like mopping → mop", () => {
-    const c = dictionaryCandidates("mopping");
-    expect(c[0]).toBe("mopping");
-    expect(c).toContain("mop");
+describe("googleTtsUrl", () => {
+  it("builds US and UK TTS urls", () => {
+    expect(googleTtsUrl("hello", "en-US")).toContain("translate.google.com");
+    expect(googleTtsUrl("hello", "en-US")).toContain("tl=en");
+    expect(googleTtsUrl("hello", "en-GB")).toContain("tl=en-GB");
   });
 });
 
-describe("normalizeAudioUrl", () => {
-  it("prepends https: for protocol-relative URLs", () => {
-    expect(
-      normalizeAudioUrl("//ssl.gstatic.com/dictionary/static/sounds/hello--_gb_1.mp3")
-    ).toBe("https://ssl.gstatic.com/dictionary/static/sounds/hello--_gb_1.mp3");
-  });
-
-  it("keeps absolute https URLs", () => {
-    expect(normalizeAudioUrl("https://example.com/a.mp3")).toBe(
-      "https://example.com/a.mp3"
-    );
-  });
-
-  it("returns null for empty", () => {
-    expect(normalizeAudioUrl("")).toBeNull();
-    expect(normalizeAudioUrl(null)).toBeNull();
-  });
-});
-
-describe("parseDictionaryEntries", () => {
-  it("extracts IPA and US/UK audio", () => {
-    const result = parseDictionaryEntries(
+describe("parseGoogleTranslateResponse", () => {
+  const helloPayload = [
+    [
+      ["Xin chào", "hello", null, null, 10],
+      [null, null, null, "həˈlō"],
+    ],
+    null,
+    "en",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    [
       [
-        {
-          word: "hello",
-          phonetic: "həˈləʊ",
-          phonetics: [
-            {
-              text: "həˈləʊ",
-              audio: "//ssl.gstatic.com/dictionary/static/sounds/20200429/hello--_gb_1.mp3",
-            },
-            {
-              text: "hɛˈloʊ",
-              audio: "//ssl.gstatic.com/dictionary/static/sounds/20200429/hello--_us_1.mp3",
-            },
+        "exclamation",
+        [
+          [
+            "used as a greeting or to begin a phone conversation.",
+            "m_en_gbus0460730.012",
+            "hello there, Katie!",
           ],
-          meanings: [
-            {
-              partOfSpeech: "exclamation",
-              definitions: [
-                {
-                  definition: "used as a greeting",
-                  example: "hello there!",
-                },
-              ],
-            },
-          ],
-        },
+        ],
+        "hello",
+        17,
       ],
-      "hello"
-    );
+      [
+        "noun",
+        [
+          [
+            "an utterance of “hello”; a greeting.",
+            "m_en_gbus0460730.025",
+            "she was getting polite nods and hellos from people",
+          ],
+        ],
+        "hello",
+        1,
+      ],
+    ],
+  ];
 
-    expect(result).not.toBeNull();
-    expect(result!.ipa).toBe("həˈləʊ");
-    expect(result!.audioUkUrl).toContain("https://");
-    expect(result!.audioUkUrl).toContain("_gb_");
-    expect(result!.audioUsUrl).toContain("_us_");
-    expect(result!.meanings[0].partOfSpeech).toBe("exclamation");
-    expect(result!.meanings[0].definition).toBe("used as a greeting");
+  it("picks translation, pronunciation, and meanings", () => {
+    expect(pickTranslation(helloPayload)).toBe("Xin chào");
+    expect(pickPronunciation(helloPayload)).toBe("həˈlō");
+    const meanings = pickMeanings(helloPayload);
+    expect(meanings[0]?.partOfSpeech).toBe("exclamation");
+    expect(meanings[0]?.definition).toContain("greeting");
+    expect(meanings[0]?.example).toBe("hello there, Katie!");
+
+    const parsed = parseGoogleTranslateResponse(helloPayload);
+    expect(parsed).toEqual({
+      translation: "Xin chào",
+      pronunciation: "həˈlō",
+      meanings: expect.arrayContaining([
+        expect.objectContaining({ partOfSpeech: "exclamation" }),
+      ]),
+    });
   });
 
-  it("returns null for empty payload", () => {
-    expect(parseDictionaryEntries([], "x")).toBeNull();
-    expect(parseDictionaryEntries(null, "x")).toBeNull();
+  it("returns null when translation missing", () => {
+    expect(parseGoogleTranslateResponse([])).toBeNull();
+    expect(parseGoogleTranslateResponse(null)).toBeNull();
+  });
+
+  it("joins multi-segment translations", () => {
+    const multi = [
+      [
+        ["Hello ", "Xin ", null, null, 1],
+        ["world", "chào", null, null, 1],
+      ],
+    ];
+    expect(pickTranslation(multi)).toBe("Hello world");
+  });
+});
+
+describe("buildDictionaryResult", () => {
+  it("attaches Google TTS urls", () => {
+    const result = buildDictionaryResult("hello", "həˈlō", [
+      {
+        partOfSpeech: "exclamation",
+        definition: "used as a greeting",
+      },
+    ]);
+    expect(result.ipa).toBe("həˈlō");
+    expect(result.audioUsUrl).toContain("translate_tts");
+    expect(result.audioUkUrl).toContain("en-GB");
+    expect(result.meanings).toHaveLength(1);
   });
 });

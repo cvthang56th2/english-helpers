@@ -36,8 +36,9 @@ pnpm dev
 
 ## Dịch & từ điển
 
-- Google Translate (unofficial) server → client → MyMemory fallback
-- IPA/audio: [dictionaryapi.dev](https://api.dictionaryapi.dev/)
+- Google Translate (unofficial `translate_a/single`): dịch + phiên âm + definitions
+- Audio: Google Translate TTS (US / UK)
+- Server lookup trước; nếu fail thì client gọi cùng endpoint
 
 ## Scripts
 
