@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { toast } from "sonner";
+import { AppLogo } from "@/components/app-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,9 +59,7 @@ export default function LoginForm() {
         <ThemeToggle />
       </div>
       <div className="space-y-3">
-        <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <BookOpen className="size-5" aria-hidden />
-        </div>
+        <AppLogo size={44} />
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
             Word Ledger

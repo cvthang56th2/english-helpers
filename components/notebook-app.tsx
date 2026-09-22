@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Clock, LogOut, Search } from "lucide-react";
 import { toast } from "sonner";
+import { AppLogo } from "@/components/app-logo";
 import { DayGroup } from "@/components/day-group";
 import { LookupHistoryList } from "@/components/lookup-history-list";
 import {
@@ -258,9 +259,7 @@ export function NotebookApp({ email }: Props) {
       <header className="sticky top-0 z-20 -mx-4 border-b border-border/80 bg-background/85 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <BookOpen className="size-5" aria-hidden />
-            </div>
+            <AppLogo size={40} />
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
                 Word Ledger
