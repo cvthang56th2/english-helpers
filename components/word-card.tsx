@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -25,22 +24,59 @@ type Props = {
 
 export function WordCard({ word, onUpdated, onDeleted }: Props) {
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [translation, setTranslation] = useState(word.translation);
+  const [ipa, setIpa] = useState(word.ipa ?? "");
+  const [partOfSpeech, setPartOfSpeech] = useState(word.part_of_speech ?? "");
+  const [definition, setDefinition] = useState(word.definition ?? "");
   const [busy, setBusy] = useState(false);
 
+  function openEdit() {
+    setTranslation(word.translation);
+    setIpa(word.ipa ?? "");
+    setPartOfSpeech(word.part_of_speech ?? "");
+    setDefinition(word.definition ?? "");
+    setEditOpen(true);
+  }
+
   async function saveEdit() {
-    const next = translation.trim();
-    if (!next || next === word.translation) {
+    const nextTranslation = translation.replace(/\s+/g, " ").trim();
+    if (!nextTranslation) {
+      toast.error("Nhập nghĩa hoặc bản dịch");
+      return;
+    }
+
+    const nextIpa = ipa.trim();
+    const nextPos = partOfSpeech.replace(/\s+/g, " ").trim();
+    const nextDef = definition.replace(/\s+/g, " ").trim();
+
+    const unchanged =
+      nextTranslation === word.translation &&
+      (!nextIpa || nextIpa === (word.ipa ?? "")) &&
+      (!nextPos || nextPos === (word.part_of_speech ?? "")) &&
+      (!nextDef || nextDef === (word.definition ?? ""));
+
+    if (unchanged) {
       setEditOpen(false);
       return;
     }
+
     setBusy(true);
     try {
+      const body: {
+        translation: string;
+        ipa?: string;
+        part_of_speech?: string;
+        definition?: string;
+      } = { translation: nextTranslation };
+      // Empty optional fields are omitted so the API keeps the existing value.
+      if (nextIpa) body.ipa = nextIpa;
+      if (nextPos) body.part_of_speech = nextPos;
+      if (nextDef) body.definition = nextDef;
+
       const res = await fetch(`/api/words/${word.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ translation: next }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Không sửa được");
@@ -55,12 +91,12 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
   }
 
   async function remove() {
+    if (!confirm(`Xóa “${word.term}”?`)) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/words/${word.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Không xóa được");
-      setDeleteOpen(false);
       onDeleted(word.id);
       toast.success("Đã xóa");
     } catch (err) {
@@ -114,10 +150,7 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
             variant="ghost"
             size="icon-sm"
             className="size-9 cursor-pointer"
-            onClick={() => {
-              setTranslation(word.translation);
-              setEditOpen(true);
-            }}
+            onClick={openEdit}
             aria-label={`Sửa ${word.term}`}
           >
             <Pencil className="size-3.5" />
@@ -127,7 +160,7 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
             variant="ghost"
             size="icon-sm"
             className="size-9 cursor-pointer text-destructive hover:text-destructive"
-            onClick={() => setDeleteOpen(true)}
+            onClick={remove}
             disabled={busy}
             aria-label={`Xóa ${word.term}`}
           >
@@ -137,19 +170,55 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
       </li>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sửa bản dịch — {word.term}</DialogTitle>
+            <DialogTitle>Sửa từ — {word.term}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor={`edit-${word.id}`}>Bản dịch</Label>
-            <Input
-              id={`edit-${word.id}`}
-              value={translation}
-              onChange={(e) => setTranslation(e.target.value)}
-              autoFocus
-              className="h-10"
-            />
+          <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor={`edit-translation-${word.id}`}>
+                Nghĩa / bản dịch
+              </Label>
+              <Input
+                id={`edit-translation-${word.id}`}
+                value={translation}
+                onChange={(e) => setTranslation(e.target.value)}
+                autoFocus
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`edit-ipa-${word.id}`}>IPA</Label>
+              <Input
+                id={`edit-ipa-${word.id}`}
+                value={ipa}
+                onChange={(e) => setIpa(e.target.value)}
+                placeholder="/kæt/"
+                className="h-10 font-[family-name:var(--font-ipa)]"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor={`edit-pos-${word.id}`}>Loại từ</Label>
+                <Input
+                  id={`edit-pos-${word.id}`}
+                  value={partOfSpeech}
+                  onChange={(e) => setPartOfSpeech(e.target.value)}
+                  placeholder="noun"
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor={`edit-def-${word.id}`}>Định nghĩa</Label>
+                <Input
+                  id={`edit-def-${word.id}`}
+                  value={definition}
+                  onChange={(e) => setDefinition(e.target.value)}
+                  placeholder="tùy chọn"
+                  className="h-10"
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -167,37 +236,6 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
               disabled={busy}
             >
               {busy ? "Đang lưu…" : "Lưu"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>Xóa từ này?</DialogTitle>
-            <DialogDescription>
-              Xóa “{word.term}” khỏi sổ. Không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => setDeleteOpen(false)}
-              disabled={busy}
-            >
-              Hủy
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              className="cursor-pointer"
-              onClick={remove}
-              disabled={busy}
-            >
-              {busy ? "Đang xóa…" : "Xóa"}
             </Button>
           </DialogFooter>
         </DialogContent>
