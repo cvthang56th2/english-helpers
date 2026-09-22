@@ -31,7 +31,7 @@ export function DayGroup({ words, onUpdated, onDeleted }: Props) {
         <div className="space-y-1">
           <p className="font-medium text-foreground">Sổ còn trống</p>
           <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
-            Tra một từ ở phía trên rồi bấm Lưu để bắt đầu sổ từ vựng.
+            Tra một từ ở phía trên rồi bấm Lưu, hoặc Thêm thủ công nếu bạn đã tra IPA trên Google.
           </p>
         </div>
       </div>

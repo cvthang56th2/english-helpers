@@ -5,6 +5,7 @@ import { BookOpen, Clock, LogOut, Search } from "lucide-react";
 import { toast } from "sonner";
 import { AppLogo } from "@/components/app-logo";
 import { DayGroup } from "@/components/day-group";
+import { ManualAddForm } from "@/components/manual-add-form";
 import { LookupHistoryList } from "@/components/lookup-history-list";
 import {
   TranslatePanel,
@@ -366,15 +367,20 @@ export function NotebookApp({ email }: Props) {
                       : "Chưa có từ nào"}
                 </p>
               </div>
-              <div className="relative w-full sm:max-w-[240px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => onSearchNotebook(e.target.value)}
-                  placeholder="Tìm trong sổ…"
-                  aria-label="Tìm trong sổ"
-                  className="h-10 pl-9 text-sm"
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                <ManualAddForm
+                  onSaved={(word) => setWords((prev) => [word, ...prev])}
                 />
+                <div className="relative w-full sm:max-w-[240px]">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(e) => onSearchNotebook(e.target.value)}
+                    placeholder="Tìm trong sổ…"
+                    aria-label="Tìm trong sổ"
+                    className="h-10 pl-9 text-sm"
+                  />
+                </div>
               </div>
             </div>
             {loadingWords ? (

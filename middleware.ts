@@ -7,9 +7,9 @@ export default auth.middleware({
 export const config = {
   matcher: [
     /*
-     * Protect app pages & word APIs. Leave auth + lookup public.
+     * Protect app pages. Word APIs return JSON 401 via getAuthedUser
+     * so the Chrome extension is not redirected to HTML login.
      */
     "/",
-    "/api/words/:path*",
   ],
 };

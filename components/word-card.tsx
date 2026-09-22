@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -24,6 +25,7 @@ type Props = {
 
 export function WordCard({ word, onUpdated, onDeleted }: Props) {
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [translation, setTranslation] = useState(word.translation);
   const [busy, setBusy] = useState(false);
 
@@ -53,12 +55,12 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
   }
 
   async function remove() {
-    if (!confirm(`Xóa “${word.term}”?`)) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/words/${word.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Không xóa được");
+      setDeleteOpen(false);
       onDeleted(word.id);
       toast.success("Đã xóa");
     } catch (err) {
@@ -125,7 +127,7 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
             variant="ghost"
             size="icon-sm"
             className="size-9 cursor-pointer text-destructive hover:text-destructive"
-            onClick={remove}
+            onClick={() => setDeleteOpen(true)}
             disabled={busy}
             aria-label={`Xóa ${word.term}`}
           >
@@ -165,6 +167,37 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
               disabled={busy}
             >
               {busy ? "Đang lưu…" : "Lưu"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Xóa từ này?</DialogTitle>
+            <DialogDescription>
+              Xóa “{word.term}” khỏi sổ. Không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setDeleteOpen(false)}
+              disabled={busy}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={remove}
+              disabled={busy}
+            >
+              {busy ? "Đang xóa…" : "Xóa"}
             </Button>
           </DialogFooter>
         </DialogContent>

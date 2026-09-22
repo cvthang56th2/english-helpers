@@ -34,6 +34,22 @@ pnpm install
 pnpm dev
 ```
 
+App mặc định `localhost:3000`. Dev hiện tại có thể dùng `pnpm dev --port 3001`.
+
+## Chrome extension
+
+Companion MV3: bôi từ trên mọi trang (icon + chuột phải), popup tra/lưu, side panel sổ, form thêm từ + IPA (cùng form trên web). Cần đang login Word Ledger trên cùng origin.
+
+```bash
+pnpm --dir extension install
+pnpm ext:dev            # watch + unpacked dir
+# hoặc: pnpm ext:build
+```
+
+Load unpacked: `chrome://extensions` → Developer mode → Load unpacked → chọn `extension/.output/chrome-mv3-dev` (dev) hoặc `extension/.output/chrome-mv3` (sau `pnpm ext:build`).
+
+Trusted domains Neon Auth phải gồm origin app. Cookie session trên origin đó được extension dùng để gọi `/api/words`.
+
 ## Dịch & từ điển
 
 - Google Translate (unofficial `translate_a/single`): dịch + phiên âm + definitions
@@ -47,4 +63,6 @@ pnpm dev
 pnpm build
 pnpm test
 pnpm drizzle-kit push   # optional alternative to SQL file
+pnpm ext:dev            # Chrome extension (WXT)
+pnpm ext:build
 ```

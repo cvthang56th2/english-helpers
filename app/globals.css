@@ -154,3 +154,53 @@
     color: var(--primary);
   }
 }
+
+/* Minimal Sonner — centered in viewport, matches app surfaces */
+[data-sonner-toaster].toaster {
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(22rem, calc(100vw - 2rem)) !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  --offset: 0px !important;
+}
+
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast {
+  --normal-bg: var(--popover);
+  --normal-text: var(--popover-foreground);
+  --normal-border: var(--border);
+  width: 100% !important;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent),
+    0 12px 32px color-mix(in oklab, var(--foreground) 8%, transparent);
+  font-family: var(--font-sans), "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+}
+
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast [data-title].cn-toast-title,
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast [data-title] {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast [data-description].cn-toast-description,
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast [data-description] {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast [data-icon].cn-toast-icon,
+[data-sonner-toaster].toaster [data-sonner-toast].cn-toast [data-icon] {
+  margin: 0;
+}

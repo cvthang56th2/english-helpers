@@ -1,0 +1,80 @@
+:root {
+  color-scheme: light dark;
+  --bg: #fafbfc;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --primary: #0f766e;
+  --primary-fg: #f0fdfa;
+  --border: #e2e8f0;
+  --card: #ffffff;
+  --input: #e2e8f0;
+  font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1220;
+    --fg: #e2e8f0;
+    --muted: #94a3b8;
+    --primary: #2dd4bf;
+    --primary-fg: #042f2e;
+    --border: #2a3548;
+    --card: #151d2e;
+    --input: #2a3548;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+button, input, textarea { font: inherit; }
+.wrap { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.brand { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--primary); margin: 0; }
+h1 { font-size: 16px; margin: 2px 0 0; }
+.muted { color: var(--muted); font-size: 12px; }
+.btn {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.55; cursor: default; }
+.btn.secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+.input, .area {
+  width: 100%;
+  border: 1px solid var(--input);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--fg);
+  padding: 8px 10px;
+}
+.area { min-height: 64px; resize: vertical; }
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 12px;
+}
+.ipa { color: var(--primary); margin: 4px 0 0; }
+.list { display: flex; flex-direction: column; gap: 12px; }
+.day { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.word { padding: 8px 0; border-top: 1px solid var(--border); }
+.word:first-of-type { border-top: 0; }
+.term { font-weight: 650; }
+label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; }
+details { border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; background: var(--card); }
+summary { cursor: pointer; font-weight: 650; }
+.error { color: #dc2626; font-size: 12px; }

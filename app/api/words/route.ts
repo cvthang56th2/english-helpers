@@ -4,6 +4,7 @@ import { getAuthedUser } from "@/lib/api/auth";
 import { db } from "@/lib/db";
 import { wordToRecord, words } from "@/lib/db/schema";
 import type { Lang } from "@/lib/lookup/types";
+import { normalizeIpa } from "@/lib/words/manual";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
         sourceLang: body.source_lang,
         targetLang: body.target_lang,
         translation: body.translation.trim(),
-        ipa: body.ipa ?? null,
+        ipa: normalizeIpa(body.ipa),
         audioUsUrl: body.audio_us_url ?? null,
         audioUkUrl: body.audio_uk_url ?? null,
         partOfSpeech: body.part_of_speech ?? null,

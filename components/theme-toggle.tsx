@@ -18,7 +18,9 @@ export function ThemeToggle({ className }: Props) {
     setMounted(true);
   }, []);
 
-  const isDark = resolvedTheme === "dark";
+  // Keep labels/icons theme-agnostic until mount so SSR HTML matches the
+  // first client render (resolvedTheme is only known in the browser).
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <Button
@@ -28,10 +30,22 @@ export function ThemeToggle({ className }: Props) {
       className={cn("size-10 cursor-pointer", className)}
       onClick={() => setTheme(isDark ? "light" : "dark")}
       disabled={!mounted}
-      aria-label={isDark ? "Chuyển sang sáng" : "Chuyển sang tối"}
-      title={isDark ? "Chế độ sáng" : "Chế độ tối"}
+      aria-label={
+        !mounted
+          ? "Đổi giao diện"
+          : isDark
+            ? "Chuyển sang sáng"
+            : "Chuyển sang tối"
+      }
+      title={
+        !mounted
+          ? "Đổi giao diện"
+          : isDark
+            ? "Chế độ sáng"
+            : "Chế độ tối"
+      }
     >
-      {mounted && isDark ? (
+      {isDark ? (
         <Sun className="size-4" aria-hidden />
       ) : (
         <Moon className="size-4" aria-hidden />
