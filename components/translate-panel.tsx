@@ -25,6 +25,8 @@ export type TranslateSeed = {
 type Props = {
   onLookup: (q: string, direction: Direction) => void;
   onSelectHistory: (entry: LookupHistoryEntry) => void;
+  /** Clear current result after language swap so user must look up again. */
+  onClearResult: () => void;
   history: LookupHistoryEntry[];
   loading?: boolean;
   result: LookupResult | null;
@@ -38,6 +40,7 @@ type Props = {
 export function TranslatePanel({
   onLookup,
   onSelectHistory,
+  onClearResult,
   history,
   loading,
   result,
@@ -98,6 +101,13 @@ export function TranslatePanel({
 
   function flip() {
     setManualDirection(true);
+    setOpen(false);
+    if (result?.translation.trim()) {
+      setQ(result.translation);
+      setDirection(result.direction === "en-vi" ? "vi-en" : "en-vi");
+      onClearResult();
+      return;
+    }
     setDirection((d) => (d === "en-vi" ? "vi-en" : "en-vi"));
   }
 

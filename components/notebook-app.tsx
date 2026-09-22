@@ -83,6 +83,11 @@ export function NotebookApp({ email }: Props) {
     setMainTab("notebook");
   }
 
+  function clearResult() {
+    setResult(null);
+    setSaved(false);
+  }
+
   const loadWords = useCallback(async (q = "") => {
     setLoadingWords(true);
     try {
@@ -295,6 +300,7 @@ export function NotebookApp({ email }: Props) {
         <TranslatePanel
           onLookup={lookup}
           onSelectHistory={restoreFromHistory}
+          onClearResult={clearResult}
           history={history}
           loading={looking}
           result={result}
