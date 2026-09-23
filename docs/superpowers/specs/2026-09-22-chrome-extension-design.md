@@ -25,7 +25,7 @@ context menu ───────────────┘
 
 - Folder: `extension/` (WXT + React for popup/side panel; shadow DOM for overlay).
 - APIs: `POST /api/lookup` (public), `GET|POST /api/words` (session), `GET /api/auth/get-session`.
-- `APP_URL` from `WXT_APP_URL` (default `http://localhost:3001`).
+- `APP_URL` from `WXT_APP_URL` (default `http://localhost:3000`).
 - Shared helpers in `lib/words/manual.ts` (validate, IPA normalize, selection → query).
 
 ## Out of scope (v1)
