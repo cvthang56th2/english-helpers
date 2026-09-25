@@ -15,7 +15,9 @@ export type ExtensionRequest =
   | { type: "LIST_WORDS"; q?: string }
   | { type: "OPEN_LOGIN" }
   | { type: "OPEN_APP" }
-  | { type: "OPEN_SIDE_PANEL" };
+  | { type: "OPEN_SIDE_PANEL" }
+  | { type: "SEARCH_ENGLISH_MEANING"; keyword: string }
+  | { type: "OPEN_KEYWORD_PROMPT" };
 
 export type ExtensionResponse =
   | { ok: true; user: AuthedUser | null }

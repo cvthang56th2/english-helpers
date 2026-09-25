@@ -7,13 +7,33 @@ import {
 } from "../../lib/words/manual";
 import { selectionToQuery } from "../../lib/words/selection";
 import { getAppUrl } from "../lib/app-url";
+import {
+  googleEnglishMeaningSearchUrl,
+  isGoogleSearchUrl,
+} from "../lib/google-search/keyword-search";
 import type { ExtensionRequest, ExtensionResponse } from "../lib/messages";
+
+const KEYWORD_PROMPT_PATH = "/keyword-search.html";
+const KEYWORD_PROMPT_SIZE = { width: 420, height: 280 };
+
+let keywordPromptWindowId: number | undefined;
+let keywordPromptOpenerId: number | undefined;
 
 export default defineBackground(() => {
   void ensureContextMenu();
 
   browser.runtime.onInstalled.addListener(() => {
     void ensureContextMenu();
+  });
+
+  browser.commands.onCommand.addListener((command) => {
+    if (command === "search-english-meaning") {
+      void openKeywordPrompt();
+    }
+  });
+
+  browser.windows.onRemoved.addListener((windowId) => {
+    if (windowId === keywordPromptWindowId) keywordPromptWindowId = undefined;
   });
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
@@ -93,7 +113,100 @@ async function handleMessage(
       }
       return { ok: true };
     }
+    case "SEARCH_ENGLISH_MEANING":
+      return searchEnglishMeaning(message.keyword);
+    case "OPEN_KEYWORD_PROMPT":
+      await openKeywordPrompt();
+      return { ok: true };
   }
+}
+
+let openingKeywordPrompt: Promise<void> | null = null;
+
+function openKeywordPrompt() {
+  if (!openingKeywordPrompt) {
+    openingKeywordPrompt = createKeywordPrompt().finally(() => {
+      openingKeywordPrompt = null;
+    });
+  }
+  return openingKeywordPrompt;
+}
+
+async function createKeywordPrompt() {
+  if (keywordPromptWindowId != null) {
+    try {
+      await browser.windows.update(keywordPromptWindowId, { focused: true });
+      return;
+    } catch {
+      keywordPromptWindowId = undefined;
+    }
+  }
+
+  let opener: Browser.windows.Window | undefined;
+  try {
+    opener = await browser.windows.getLastFocused({ windowTypes: ["normal"] });
+  } catch {
+    opener = undefined;
+  }
+  keywordPromptOpenerId = opener?.id;
+  const created = await browser.windows.create({
+    url: browser.runtime.getURL(KEYWORD_PROMPT_PATH),
+    type: "popup",
+    focused: true,
+    ...(opener ? popupBounds(opener) : KEYWORD_PROMPT_SIZE),
+  });
+  keywordPromptWindowId = created?.id;
+}
+
+function popupBounds(win: Browser.windows.Window) {
+  const { width, height } = KEYWORD_PROMPT_SIZE;
+  return {
+    width,
+    height,
+    left: Math.max(
+      0,
+      Math.round((win.left ?? 0) + ((win.width ?? 800) - width) / 2)
+    ),
+    top: Math.max(
+      0,
+      Math.round((win.top ?? 0) + Math.max(48, ((win.height ?? 640) - height) / 4))
+    ),
+  };
+}
+
+async function searchEnglishMeaning(keyword: string): Promise<ExtensionResponse> {
+  const url = googleEnglishMeaningSearchUrl(keyword);
+  if (!url) return { ok: false, error: "Nhập một từ khóa" };
+
+  const windowId = keywordPromptOpenerId;
+  if (windowId != null) {
+    try {
+      await browser.windows.update(windowId, { focused: true });
+      await openMeaningSearch(url, windowId);
+      return { ok: true };
+    } catch {
+      keywordPromptOpenerId = undefined;
+    }
+  }
+
+  await openMeaningSearch(url);
+  return { ok: true };
+}
+
+async function openMeaningSearch(url: string, windowId?: number) {
+  const [tab] = await browser.tabs.query({
+    active: true,
+    ...(windowId != null ? { windowId } : {}),
+  });
+  if (tab?.id != null && isGoogleSearchUrl(tab.url)) {
+    await browser.tabs.update(tab.id, { url, active: true });
+    return;
+  }
+  await browser.tabs.create({
+    url,
+    active: true,
+    ...(windowId != null ? { windowId } : {}),
+  });
 }
 
 async function authedFetch(path: string, init: RequestInit = {}) {

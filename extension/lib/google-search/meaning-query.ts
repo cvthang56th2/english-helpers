@@ -8,6 +8,20 @@ export type GoogleSearchMeaningPair = {
   query: string;
 };
 
+/** Map VI query term + EN gloss into notebook-oriented EN→VI pair. */
+export function buildSearchMeaningPair(
+  viTerm: string,
+  enGloss: string,
+  query: string
+): GoogleSearchMeaningPair {
+  return {
+    term: enGloss,
+    translation: viTerm,
+    direction: "en-vi",
+    query,
+  };
+}
+
 const MEANING_QUERY_PATTERNS: RegExp[] = [
   /^what\s+is\s+(.+?)\s+in\s+english\s*[?.!]*$/i,
   /^(.+?)\s+tiếng\s*anh\s+là\s+gì\s*[?.!]*$/i,
@@ -442,13 +456,8 @@ export function readGoogleSearchMeaningPair(): GoogleSearchMeaningPair | null {
     extractEnglishFromDictionaryPanel() ||
     "";
 
-  // Show button even if translation not ready yet (user can fill / select).
-  return {
-    term,
-    translation,
-    direction: "vi-en",
-    query,
-  };
+  // Show button even if EN gloss not ready yet (user can fill / select).
+  return buildSearchMeaningPair(term, translation, query);
 }
 
 export function findSearchSaveAnchor(): HTMLElement | null {

@@ -173,7 +173,7 @@ function mountUi() {
           <input id="term" value="${escapeAttr(term)}" />
         </label>
         <label>Nghĩa
-          <input id="translation" value="${escapeAttr(translation)}" placeholder="English meaning" />
+          <input id="translation" value="${escapeAttr(translation)}" placeholder="${direction === "en-vi" ? "nghĩa tiếng Việt" : "English meaning"}" />
         </label>
         <label>IPA
           <input id="ipa" value="${escapeAttr(ipa)}" placeholder="/…/" />
@@ -183,7 +183,7 @@ function mountUi() {
           <button id="toggle-dir" type="button">Đổi hướng</button>
         </div>
         <button id="fetch-ipa" type="button" class="secondary" ${fetchingIpa ? "disabled" : ""}>
-          ${fetchingIpa ? "Đang lấy IPA…" : "Lấy IPA từ nghĩa EN"}
+          ${fetchingIpa ? "Đang lấy IPA…" : "Lấy IPA từ EN"}
         </button>
         ${
           showSplit
@@ -267,7 +267,7 @@ function mountUi() {
       syncFromInputs();
       const q = englishText().trim();
       if (!q) {
-        errorText = "Nhập nghĩa tiếng Anh để lấy IPA";
+        errorText = "Nhập từ tiếng Anh để lấy IPA";
         render();
         return;
       }

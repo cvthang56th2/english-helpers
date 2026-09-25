@@ -6,6 +6,15 @@ export default defineConfig({
     name: "Word Ledger",
     description: "Tra EN⇔VI trên mọi trang và lưu vào sổ Word Ledger.",
     permissions: ["contextMenus", "sidePanel", "cookies", "tabs"],
+    commands: {
+      "search-english-meaning": {
+        description: "Tìm từ tiếng Anh trên Google",
+        suggested_key: {
+          default: "Ctrl+Shift+F",
+          mac: "Command+Shift+F",
+        },
+      },
+    },
     host_permissions: [
       "http://localhost:3000/*",
       "http://localhost:3001/*",

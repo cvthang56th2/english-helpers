@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSearchMeaningPair,
   parseMeaningQuery,
   pickBestEnglishGloss,
   sanitizeEnglishGloss,
 } from "../../../extension/lib/google-search/meaning-query";
+
+describe("buildSearchMeaningPair", () => {
+  it("defaults to EN→VI with English as term and Vietnamese as gloss", () => {
+    expect(buildSearchMeaningPair("gừng", "ginger", "gừng tiếng anh")).toEqual({
+      term: "ginger",
+      translation: "gừng",
+      direction: "en-vi",
+      query: "gừng tiếng anh",
+    });
+  });
+});
 
 describe("parseMeaningQuery", () => {
   it("parses Vietnamese 'tiếng anh là gì' queries", () => {
