@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AudioButton } from "@/components/audio-button";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,27 @@ type Props = {
   word: WordRecord;
   onUpdated: (word: WordRecord) => void;
   onDeleted: (id: string) => void;
+  sortable?: boolean;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDragStartId?: (id: string) => void;
+  onDropOn?: (id: string) => void;
 };
 
-export function WordCard({ word, onUpdated, onDeleted }: Props) {
+export function WordCard({
+  word,
+  onUpdated,
+  onDeleted,
+  sortable = false,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMoveUp,
+  onMoveDown,
+  onDragStartId,
+  onDropOn,
+}: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const [term, setTerm] = useState(word.term);
   const [translation, setTranslation] = useState(word.translation);
@@ -117,7 +135,39 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
 
   return (
     <>
-      <li className="group flex items-start justify-between gap-3 px-3 py-3.5 transition-colors hover:bg-muted/40">
+      <li
+        className="group flex items-start justify-between gap-3 px-3 py-3.5 transition-colors hover:bg-muted/40"
+        onDragOver={
+          sortable
+            ? (event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+              }
+            : undefined
+        }
+        onDrop={
+          sortable
+            ? (event) => {
+                event.preventDefault();
+                onDropOn?.(word.id);
+              }
+            : undefined
+        }
+      >
+        {sortable && (
+          <div
+            draggable
+            className="mt-1 flex size-9 shrink-0 cursor-grab items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+            aria-label={`Kéo để sắp xếp ${word.term}`}
+            onDragStart={(event) => {
+              event.dataTransfer.setData("text/plain", word.id);
+              event.dataTransfer.effectAllowed = "move";
+              onDragStartId?.(word.id);
+            }}
+          >
+            <GripVertical className="size-4" aria-hidden />
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-lg font-semibold tracking-tight text-foreground">
@@ -154,6 +204,32 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
           </div>
         </div>
         <div className="flex shrink-0 gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+          {sortable && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="size-9 cursor-pointer"
+                onClick={onMoveUp}
+                disabled={!canMoveUp || busy}
+                aria-label={`Đưa ${word.term} lên`}
+              >
+                <ChevronUp className="size-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="size-9 cursor-pointer"
+                onClick={onMoveDown}
+                disabled={!canMoveDown || busy}
+                aria-label={`Đưa ${word.term} xuống`}
+              >
+                <ChevronDown className="size-3.5" />
+              </Button>
+            </>
+          )}
           <Button
             type="button"
             variant="ghost"

@@ -47,6 +47,7 @@ export type WordRecord = {
   audio_uk_url: string | null;
   part_of_speech: string | null;
   definition: string | null;
+  position: number;
   created_at: string;
   updated_at: string;
 };

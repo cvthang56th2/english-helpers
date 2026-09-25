@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   pgSchema,
   pgTable,
   text,
@@ -51,6 +52,7 @@ export const words = pgTable(
     audioUkUrl: text("audio_uk_url"),
     partOfSpeech: text("part_of_speech"),
     definition: text("definition"),
+    position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -84,6 +86,7 @@ export function wordToRecord(row: WordRow) {
     audio_uk_url: row.audioUkUrl,
     part_of_speech: row.partOfSpeech,
     definition: row.definition,
+    position: row.position,
     created_at:
       row.createdAt instanceof Date
         ? row.createdAt.toISOString()

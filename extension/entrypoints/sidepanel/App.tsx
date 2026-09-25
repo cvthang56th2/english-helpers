@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { WordRecord } from "../../../lib/lookup/types";
+import { sortWordsInDay } from "../../../lib/words/order";
 import { LoginCard, LookupBox, ManualForm, useSession } from "../../lib/ui";
 import { sendMessage } from "../../lib/messages";
 
@@ -52,7 +53,9 @@ export function App() {
       list.push(word);
       map.set(key, list);
     }
-    return [...map.entries()];
+    return [...map.entries()].map(
+      ([key, list]) => [key, sortWordsInDay(list)] as const
+    );
   }, [words]);
 
   function onSaved(word: WordRecord) {

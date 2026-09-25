@@ -388,12 +388,37 @@ export function NotebookApp({ email }: Props) {
             ) : (
               <DayGroup
                 words={words}
+                sortable={!query.trim()}
                 onUpdated={(w) =>
                   setWords((prev) => prev.map((x) => (x.id === w.id ? w : x)))
                 }
                 onDeleted={(id) =>
                   setWords((prev) => prev.filter((x) => x.id !== id))
                 }
+                onReorder={(ids) => {
+                  const rank = new Map(ids.map((id, index) => [id, index]));
+                  setWords((prev) =>
+                    prev.map((word) =>
+                      rank.has(word.id)
+                        ? { ...word, position: rank.get(word.id)! }
+                        : word
+                    )
+                  );
+                  void fetch("/api/words/reorder", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ids }),
+                  })
+                    .then(async (res) => {
+                      if (res.ok) return;
+                      const data = await res.json().catch(() => ({}));
+                      throw new Error(data.error || "Không sắp xếp được");
+                    })
+                    .catch((err: unknown) => {
+                      toast.error(err instanceof Error ? err.message : "Lỗi");
+                      void loadWords(query);
+                    });
+                }}
               />
             )}
           </>
