@@ -14,6 +14,7 @@ function word(partial: Pick<WordRecord, "id" | "position" | "created_at">): Word
     audio_uk_url: null,
     part_of_speech: null,
     definition: null,
+    updated_at: partial.created_at,
     ...partial,
   };
 }
