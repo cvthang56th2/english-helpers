@@ -24,6 +24,7 @@ type Props = {
 
 export function WordCard({ word, onUpdated, onDeleted }: Props) {
   const [editOpen, setEditOpen] = useState(false);
+  const [term, setTerm] = useState(word.term);
   const [translation, setTranslation] = useState(word.translation);
   const [ipa, setIpa] = useState(word.ipa ?? "");
   const [partOfSpeech, setPartOfSpeech] = useState(word.part_of_speech ?? "");
@@ -31,6 +32,7 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
   const [busy, setBusy] = useState(false);
 
   function openEdit() {
+    setTerm(word.term);
     setTranslation(word.translation);
     setIpa(word.ipa ?? "");
     setPartOfSpeech(word.part_of_speech ?? "");
@@ -39,7 +41,12 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
   }
 
   async function saveEdit() {
+    const nextTerm = term.replace(/\s+/g, " ").trim();
     const nextTranslation = translation.replace(/\s+/g, " ").trim();
+    if (!nextTerm) {
+      toast.error("Nhập từ cần lưu");
+      return;
+    }
     if (!nextTranslation) {
       toast.error("Nhập nghĩa hoặc bản dịch");
       return;
@@ -50,6 +57,7 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
     const nextDef = definition.replace(/\s+/g, " ").trim();
 
     const unchanged =
+      nextTerm === word.term &&
       nextTranslation === word.translation &&
       (!nextIpa || nextIpa === (word.ipa ?? "")) &&
       (!nextPos || nextPos === (word.part_of_speech ?? "")) &&
@@ -63,11 +71,12 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
     setBusy(true);
     try {
       const body: {
+        term: string;
         translation: string;
         ipa?: string;
         part_of_speech?: string;
         definition?: string;
-      } = { translation: nextTranslation };
+      } = { term: nextTerm, translation: nextTranslation };
       // Empty optional fields are omitted so the API keeps the existing value.
       if (nextIpa) body.ipa = nextIpa;
       if (nextPos) body.part_of_speech = nextPos;
@@ -176,6 +185,16 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
           </DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-1.5">
+              <Label htmlFor={`edit-term-${word.id}`}>Từ</Label>
+              <Input
+                id={`edit-term-${word.id}`}
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                autoFocus
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor={`edit-translation-${word.id}`}>
                 Nghĩa / bản dịch
               </Label>
@@ -183,7 +202,6 @@ export function WordCard({ word, onUpdated, onDeleted }: Props) {
                 id={`edit-translation-${word.id}`}
                 value={translation}
                 onChange={(e) => setTranslation(e.target.value)}
-                autoFocus
                 className="h-10"
               />
             </div>
