@@ -20,12 +20,6 @@ let keywordPromptWindowId: number | undefined;
 let keywordPromptOpenerId: number | undefined;
 
 export default defineBackground(() => {
-  void ensureContextMenu();
-
-  browser.runtime.onInstalled.addListener(() => {
-    void ensureContextMenu();
-  });
-
   browser.commands.onCommand.addListener((command) => {
     if (command === "search-english-meaning") {
       void openKeywordPrompt();
@@ -34,20 +28,6 @@ export default defineBackground(() => {
 
   browser.windows.onRemoved.addListener((windowId) => {
     if (windowId === keywordPromptWindowId) keywordPromptWindowId = undefined;
-  });
-
-  browser.contextMenus.onClicked.addListener((info, tab) => {
-    if (!tab?.id) return;
-    const q = selectionToQuery(String(info.selectionText ?? ""));
-    if (!q) return;
-    const type =
-      info.menuItemId === "word-ledger-lookup"
-        ? "LOOKUP_IN_PAGE"
-        : info.menuItemId === "word-ledger-add"
-          ? "ADD_IN_PAGE"
-          : null;
-    if (!type) return;
-    void browser.tabs.sendMessage(tab.id, { type, q }).catch(() => {});
   });
 
   browser.runtime.onMessage.addListener(
@@ -64,27 +44,6 @@ export default defineBackground(() => {
     }
   );
 });
-
-async function ensureContextMenu() {
-  await browser.contextMenus.removeAll();
-  browser.contextMenus.create({
-    id: "word-ledger",
-    title: "Word Ledger",
-    contexts: ["selection"],
-  });
-  browser.contextMenus.create({
-    id: "word-ledger-lookup",
-    parentId: "word-ledger",
-    title: "Tra từ",
-    contexts: ["selection"],
-  });
-  browser.contextMenus.create({
-    id: "word-ledger-add",
-    parentId: "word-ledger",
-    title: "Thêm từ mới",
-    contexts: ["selection"],
-  });
-}
 
 async function handleMessage(
   message: ExtensionRequest

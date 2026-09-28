@@ -27,18 +27,6 @@ export type ExtensionResponse =
   | { ok: true }
   | { ok: false; error: string; code?: "unauthorized" };
 
-export type PageLookupMessage = {
-  type: "LOOKUP_IN_PAGE";
-  q: string;
-};
-
-export type PageAddMessage = {
-  type: "ADD_IN_PAGE";
-  q: string;
-};
-
-export type PageMessage = PageLookupMessage | PageAddMessage;
-
 export function sendMessage<T extends ExtensionResponse>(
   message: ExtensionRequest
 ): Promise<T> {

@@ -5,7 +5,7 @@ export default defineConfig({
   manifest: {
     name: "Word Ledger",
     description: "Tra EN⇔VI trên mọi trang và lưu vào sổ Word Ledger.",
-    permissions: ["contextMenus", "sidePanel", "cookies", "tabs"],
+    permissions: ["sidePanel", "cookies", "tabs"],
     commands: {
       "search-english-meaning": {
         description: "Tìm từ tiếng Anh trên Google",
