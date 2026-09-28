@@ -20,12 +20,12 @@ function word(partial: Pick<WordRecord, "id" | "position" | "created_at">): Word
 }
 
 describe("sortWordsInDay", () => {
-  it("keeps newest first when every position is 0", () => {
+  it("keeps oldest first when every position is 0", () => {
     const sorted = sortWordsInDay([
-      word({ id: "old", position: 0, created_at: "2026-09-25T01:00:00.000Z" }),
       word({ id: "new", position: 0, created_at: "2026-09-25T08:00:00.000Z" }),
+      word({ id: "old", position: 0, created_at: "2026-09-25T01:00:00.000Z" }),
     ]);
-    expect(sorted.map((w) => w.id)).toEqual(["new", "old"]);
+    expect(sorted.map((w) => w.id)).toEqual(["old", "new"]);
   });
 
   it("uses position ahead of created time", () => {

@@ -1,11 +1,8 @@
 import type { Direction } from "../../lib/lookup/types";
 import { normalizeIpa } from "../../lib/words/manual";
 import {
-  canSplitForIpa,
   findResultAnchor,
-  joinWordIpas,
   readGoogleTranslatePair,
-  tokenizeForIpa,
   type GoogleTranslatePair,
 } from "../lib/google-translate/read-pair";
 import { sendMessage } from "../lib/messages";
@@ -130,9 +127,6 @@ function mountUi() {
     let term = pair.term;
     let translation = pair.translation;
     let ipa = pair.pageIpa ? `/${pair.pageIpa.replace(/^\/+|\/+$/g, "")}/` : "";
-    let splitMode = false;
-    let selected = new Set<string>();
-    let fetching = false;
     let errorText = "";
 
     function syncFromInputs() {
@@ -148,9 +142,6 @@ function mountUi() {
 
     function render() {
       syncFromInputs();
-      const tokens = tokenizeForIpa(direction === "en-vi" ? term : "");
-      const showSplit =
-        canSplitForIpa(term, ipa, direction) || (splitMode && tokens.length >= 2);
 
       card.innerHTML = `
         <button id="close" type="button" aria-label="Đóng">×</button>
@@ -168,32 +159,6 @@ function mountUi() {
           <span id="dir" class="muted">${direction === "en-vi" ? "EN → VI" : "VI → EN"}</span>
           <button id="toggle-dir" type="button">Đổi hướng</button>
         </div>
-        ${
-          showSplit
-            ? `<button id="split" type="button" class="secondary">${
-                splitMode ? "Ẩn tách từ" : "Tách từ lấy IPA"
-              }</button>`
-            : ""
-        }
-        ${
-          splitMode && tokens.length
-            ? `<div id="split-panel">
-                <p class="muted">Chọn từ để lấy IPA (vẫn một entry)</p>
-                <div class="chips">
-                  ${tokens
-                    .map((w) => {
-                      const key = w.toLowerCase();
-                      const checked = selected.has(key) ? "checked" : "";
-                      return `<label class="chip"><input type="checkbox" data-word="${escapeAttr(w)}" ${checked}/> ${escapeHtml(w)}</label>`;
-                    })
-                    .join("")}
-                </div>
-                <button id="apply-ipa" type="button" class="secondary" ${fetching ? "disabled" : ""}>
-                  ${fetching ? "Đang lấy IPA…" : "Áp dụng IPA"}
-                </button>
-              </div>`
-            : ""
-        }
         <p id="error" class="error" ${errorText ? "" : "hidden"}>${escapeHtml(errorText)}</p>
         <button id="save" type="button">Lưu vào sổ</button>
       `;
@@ -202,32 +167,8 @@ function mountUi() {
       shadow.getElementById("toggle-dir")?.addEventListener("click", () => {
         syncFromInputs();
         direction = direction === "en-vi" ? "vi-en" : "en-vi";
-        splitMode = false;
-        selected = new Set();
         errorText = "";
         render();
-      });
-      shadow.getElementById("split")?.addEventListener("click", () => {
-        syncFromInputs();
-        splitMode = !splitMode;
-        if (splitMode && selected.size === 0) {
-          for (const w of tokenizeForIpa(term)) {
-            selected.add(w.toLowerCase());
-          }
-        }
-        errorText = "";
-        render();
-      });
-      shadow.querySelectorAll<HTMLInputElement>("input[data-word]").forEach((el) => {
-        el.addEventListener("change", () => {
-          const word = el.dataset.word?.toLowerCase();
-          if (!word) return;
-          if (el.checked) selected.add(word);
-          else selected.delete(word);
-        });
-      });
-      shadow.getElementById("apply-ipa")?.addEventListener("click", () => {
-        void applyIpa();
       });
       shadow.getElementById("save")?.addEventListener("click", () => {
         void save();
@@ -240,44 +181,6 @@ function mountUi() {
           }
         });
       }
-    }
-
-    async function applyIpa() {
-      syncFromInputs();
-      const words = tokenizeForIpa(term).filter((w) =>
-        selected.has(w.toLowerCase())
-      );
-      if (!words.length) {
-        errorText = "Chọn ít nhất một từ";
-        render();
-        return;
-      }
-      fetching = true;
-      errorText = "";
-      render();
-      const ipaByWord: Record<string, string | null> = {};
-      for (const word of words) {
-        const res = await sendMessage({
-          type: "LOOKUP",
-          q: word,
-          direction: "en-vi",
-        });
-        ipaByWord[word.toLowerCase()] =
-          res.ok && "result" in res ? res.result.ipa : null;
-      }
-      const joined = joinWordIpas(words, ipaByWord);
-      fetching = false;
-      if (!joined) {
-        errorText = "Không lấy được IPA cho các từ đã chọn";
-        render();
-        showToast("Không lấy được IPA", "warn");
-        return;
-      }
-      ipa = `/${joined}/`;
-      splitMode = false;
-      errorText = "";
-      render();
-      showToast("Đã điền IPA", "ok");
     }
 
     async function save() {
@@ -448,27 +351,6 @@ const uiCss = `
     font: inherit;
   }
   #toggle-dir { margin-left: auto; }
-  #split, #apply-ipa {
-    margin-top: 8px;
-    width: 100%;
-    height: 32px;
-  }
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 500;
-  }
   .error { margin: 6px 0 0; font-size: 12px; color: #dc2626; }
   #save {
     margin-top: 10px;

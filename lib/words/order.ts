@@ -3,7 +3,7 @@ import type { WordRecord } from "@/lib/lookup/types";
 export function compareWordsInDay(a: WordRecord, b: WordRecord): number {
   const position = (a.position ?? 0) - (b.position ?? 0);
   if (position !== 0) return position;
-  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
 }
 
 export function sortWordsInDay(words: WordRecord[]): WordRecord[] {
